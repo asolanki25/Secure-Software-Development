@@ -1,0 +1,39 @@
+name: Compile and run
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Assignment 3 - compile
+        run: |
+          cd assignment-3
+          javac -d out AppLayerSecurity.java OneTimePad.java
+
+      - name: Assignment 3 - run AppLayerSecurity
+        run: timeout 120 java -cp assignment-3/out AppLayerSecurity
+
+      - name: Assignment 3 - run OneTimePad
+        run: java -cp assignment-3/out OneTimePad
+
+      - name: Assignment 4 - check firewall syntax
+        if: hashFiles('assignment-4/linux-firewall.nft') != ''
+        run: |
+          sudo apt-get install -y nftables
+          sudo nft -c -f assignment-4/linux-firewall.nft && echo "Firewall ruleset syntax OK"
+
+      - name: Project 1 - Maven build
+        if: hashFiles('project-1/secure-bank/pom.xml') != ''
+        run: |
+          cd project-1/secure-bank
+          mvn -B package -DskipTests
