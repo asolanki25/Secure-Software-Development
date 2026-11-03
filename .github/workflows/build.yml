@@ -85,3 +85,20 @@ jobs:
           cat err.txt
           grep -q "permission denied" err.txt
           echo "Least-privilege check passed."
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Assignment 5 - download PostgreSQL JDBC driver
+        run: curl -sSL -o postgresql.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
+
+      - name: Assignment 5 - compile and run CustomerDatabase.java (JDBC)
+        run: |
+          javac -d assignment5-out Assignment5/CustomerDatabase.java
+          java -cp assignment5-out:postgresql.jar CustomerDatabase | tee java-output.txt
+          grep -q "3 rows inserted." java-output.txt
+          grep -q "DROP TABLE customer;--" java-output.txt
+          grep -q "Invalid ZIP code rejected (SQLState 23514)" java-output.txt
+          echo "JDBC checks passed."
