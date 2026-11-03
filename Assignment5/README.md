@@ -7,6 +7,9 @@ MSCS-535 Secure Software Development, Fall 2026. Ananya Solanki.
 - `create_customer_db.sql`: PostgreSQL 16 script (tested). It creates the `customer_db` database and a `customer` table with name and address fields, adds CHECK constraints on state and ZIP code, creates a least-privilege `customer_app` role (SELECT and INSERT only), inserts two sample rows, and shows that an invalid ZIP code is rejected.
 - `create_customer_oracle_freesql.sql`: the same table in Oracle syntax, for Oracle FreeSQL (https://freesql.com, formerly Oracle Live SQL). The textbook's examples use Oracle. FreeSQL provides a ready-made schema, so the script creates the table directly and skips the role statements.
 
+- `CustomerDatabase.java`: Java JDBC version. It creates the same database and table from Java, inserts rows with a PreparedStatement (including an SQL injection attempt that is stored as plain text), and shows that an invalid ZIP code is rejected. It reads connection settings from environment variables, so no credentials are in the code. GitHub Actions compiles and runs it on every push (`.github/workflows/build.yml`).
+- `postgresql_output.txt`: the real output of `create_customer_db.sql`.
+
 ## Run (PostgreSQL)
 
 ```
