@@ -1,0 +1,41 @@
+DROP DATABASE
+CREATE DATABASE
+You are now connected to database "customer_db" as user "postgres".
+CREATE TABLE
+DROP ROLE
+CREATE ROLE
+REVOKE
+GRANT
+INSERT 0 2
+                                 Table "public.customer"
+   Column   |         Type          | Collation | Nullable |           Default            
+------------+-----------------------+-----------+----------+------------------------------
+ cust_num   | integer               |           | not null | generated always as identity
+ first_name | character varying(30) |           | not null | 
+ last_name  | character varying(30) |           | not null | 
+ street     | character varying(60) |           | not null | 
+ city       | character varying(30) |           | not null | 
+ state      | character(2)          |           | not null | 
+ zip        | character(5)          |           | not null | 
+Indexes:
+    "customer_pkey" PRIMARY KEY, btree (cust_num)
+Check constraints:
+    "customer_state_check" CHECK (state ~ '^[A-Z]{2}$'::text)
+    "customer_zip_check" CHECK (zip ~ '^[0-9]{5}$'::text)
+
+ cust_num | first_name | last_name |     street      |  city   | state |  zip  
+----------+------------+-----------+-----------------+---------+-------+-------
+        1 | John       | Smith     | 112 Anywhere St | Miami   | FL    | 33333
+        2 | Christy    | Jones     | 2 Singleton Ave | Orlando | FL    | 32801
+(2 rows)
+
+ERROR:  new row for relation "customer" violates check constraint "customer_zip_check"
+DETAIL:  Failing row contains (3, Test, User, 1 Main St, Tampa, FL, 3360A).
+
+-- Least-privilege test run as customer_app --
+ count 
+-------
+     2
+(1 row)
+
+ERROR:  permission denied for table customer
