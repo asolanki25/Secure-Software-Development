@@ -38,25 +38,6 @@ jobs:
           cd project-1/secure-bank
           mvn -B package -DskipTests
 
-      - name: Assignment 6 - compile Vehicle classes and generics demo
-        run: javac -Xlint:unchecked -Xlint:rawtypes -d assignment6-out Assignment6/VehicleDemo.java Assignment6/GenericsDemo.java
-
-      - name: Assignment 6 - run VehicleDemo (inheritance and overriding)
-        run: |
-          java -cp assignment6-out VehicleDemo | tee vehicle-output.txt
-          grep -q "SUV reverses carefully at 8 mph" vehicle-output.txt
-          grep -q "SportsCar accelerates forward at 160 mph (capped from 190)" vehicle-output.txt
-          grep -q "Hybrid reverses silently at 6 mph" vehicle-output.txt
-          grep -q "Rejected -30 mph" vehicle-output.txt
-          echo "Vehicle checks passed."
-
-      - name: Assignment 6 - run GenericsDemo (generic class risks)
-        run: |
-          java -cp assignment6-out GenericsDemo | tee generics-output.txt
-          grep -q "Same runtime class: true" generics-output.txt
-          grep -q "ClassCastException at read time" generics-output.txt
-          echo "Generics checks passed."
-
   assignment-5-sql:
     runs-on: ubuntu-latest
     services:
@@ -121,3 +102,32 @@ jobs:
           grep -q "DROP TABLE customer;--" java-output.txt
           grep -q "Invalid ZIP code rejected (SQLState 23514)" java-output.txt
           echo "JDBC checks passed."
+
+  assignment-6-java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Assignment 6 - compile Vehicle classes and generics demo
+        run: javac -Xlint:unchecked -Xlint:rawtypes -d assignment6-out Assignment6/VehicleDemo.java Assignment6/GenericsDemo.java
+
+      - name: Assignment 6 - run VehicleDemo (inheritance and overriding)
+        run: |
+          java -cp assignment6-out VehicleDemo | tee vehicle-output.txt
+          grep -q "SUV reverses carefully at 8 mph" vehicle-output.txt
+          grep -q "SportsCar accelerates forward at 160 mph (capped from 190)" vehicle-output.txt
+          grep -q "Hybrid reverses silently at 6 mph" vehicle-output.txt
+          grep -q "Rejected -30 mph" vehicle-output.txt
+          echo "Vehicle checks passed."
+
+      - name: Assignment 6 - run GenericsDemo (generic class risks)
+        run: |
+          java -cp assignment6-out GenericsDemo | tee generics-output.txt
+          grep -q "Same runtime class: true" generics-output.txt
+          grep -q "ClassCastException at read time" generics-output.txt
+          echo "Generics checks passed."
