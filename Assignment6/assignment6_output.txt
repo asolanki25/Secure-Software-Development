@@ -1,0 +1,36 @@
+=== javac -Xlint:unchecked -Xlint:rawtypes VehicleDemo.java GenericsDemo.java
+GenericsDemo.java:42: warning: [rawtypes] found raw type: Garage
+        Garage rawGarage = suvGarage;
+        ^
+  missing type arguments for generic class Garage<T>
+  where T is a type-variable:
+    T extends Vehicle declared in class Garage
+GenericsDemo.java:43: warning: [unchecked] unchecked call to park(T) as a member of the raw type Garage
+        rawGarage.park(new SportsCar());
+                      ^
+  where T is a type-variable:
+    T extends Vehicle declared in class Garage
+2 warnings
+
+=== java VehicleDemo
+Vehicle rolls forward at 60 mph
+Vehicle backs up at 10 mph (capped from 12)
+
+[all-wheel drive engaged] SUV climbs forward at 60 mph
+[rear camera on] SUV reverses carefully at 8 mph (capped from 12)
+
+[sport mode] SportsCar accelerates forward at 60 mph
+[launch control disabled] SportsCar creeps backward at 5 mph (capped from 12)
+
+[gas and electric] Hybrid glides forward at 60 mph
+[electric motor only] Hybrid reverses silently at 6 mph (capped from 12)
+
+[electric motor] Hybrid glides forward at 20 mph
+[sport mode] SportsCar accelerates forward at 160 mph (capped from 190)
+[sport mode] Error: Rejected -30 mph: speed must be between 0 and 200
+
+=== java GenericsDemo
+Useful: retrieved SUV with no cast
+Same runtime class: true
+Raw type accepted a SportsCar into Garage<SUV>
+ClassCastException at read time: class SportsCar cannot be cast to class SUV (SportsCar and SUV are in unnamed module of loader 'app')
