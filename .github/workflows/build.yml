@@ -131,3 +131,50 @@ jobs:
           grep -q "Same runtime class: true" generics-output.txt
           grep -q "ClassCastException at read time" generics-output.txt
           echo "Generics checks passed."
+
+  assignment-7-uml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Assignment 7 - install Graphviz and PlantUML
+        run: |
+          sudo apt-get update && sudo apt-get install -y graphviz
+          curl -sSL -o plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2024.7/plantuml-1.2024.7.jar
+
+      - name: Assignment 7 - render the security use case diagram
+        run: |
+          java -jar plantuml.jar -tpng -o "$PWD/rendered" Assignment7/secure_account_portal_usecase.puml
+          test -s rendered/SecureAccountPortal.png
+          echo "Diagram rendered."
+
+  assignment-8-java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Assignment 8 - compile SafeFileReader
+        run: javac -d assignment8-out Assignment8/SafeFileReader.java
+
+      - name: Assignment 8 - run and check every bad request fails safely
+        run: |
+          java -cp assignment8-out SafeFileReader 2>&1 | tee a8-output.txt
+          grep -q "SUCCESS -> mode=secure" a8-output.txt
+          test "$(grep -c 'FAILED SAFELY' a8-output.txt)" -eq 7
+          grep -q "path outside base directory" a8-output.txt
+          grep -q "file exceeds size limit" a8-output.txt
+          grep -q "invalid UTF-8" a8-output.txt
+          grep -q "missing file name" a8-output.txt
+          if grep -q "root:" a8-output.txt; then echo "Traversal leaked data"; exit 1; fi
+          test "$(grep -c "^  \[log\] INFO AUDIT read request='config.txt' outcome=OK$" a8-output.txt)" -eq 1
+          echo "Fail-safe checks passed."
