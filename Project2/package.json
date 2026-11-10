@@ -1,0 +1,21 @@
+{
+  "name": "project2-code-injection",
+  "version": "1.0.0",
+  "description": "MSCS-535 Project 2: JavaScript injection (XSS), eval() injection, and their mitigation with a Content Security Policy",
+  "main": "secure-app.js",
+  "scripts": {
+    "demo": "node attack-demo.js",
+    "vulnerable-xss": "node xss-vulnerable.js",
+    "vulnerable-eval": "node eval-vulnerable.js",
+    "secure": "node --disallow-code-generation-from-strings secure-app.js"
+  },
+  "author": "Ananya Solanki",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.3"
+  }
+}

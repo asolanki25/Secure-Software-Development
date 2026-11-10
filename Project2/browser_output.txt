@@ -1,0 +1,20 @@
+Vulnerable app (xss-vulnerable.js) in Chromium
+  Reflected XSS                          RAN - alert: ['reflected XSS']
+                                         page heading: 'Results for:'
+  Stored XSS (alert shows the cookie)    RAN - alert: ['session=demo-session-123']
+                                         page heading: 'Guestbook'
+  DOM-based XSS                          RAN - alert: ['DOM-XSS']
+                                         page heading: 'Welcome, '
+
+Secure app (secure-app.js) in Chromium
+  Reflected XSS                          blocked - no alert
+                                         page heading: 'Invalid search term'
+  Stored XSS                             blocked - no alert
+                                         page heading: 'Guestbook'
+  DOM-based XSS                          blocked - no alert
+                                         page heading: "Welcome, <img src=x onerror=alert('DOM-XSS')>"
+  CSP alone (encoding bypassed)          blocked - no alert
+                                         page heading: 'Results for: shoes'
+                                         console: Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-WfGKW/kT9Z
+                                         console: Content Security Policy blocked eval: EvalError
+                                         console: Executing inline event handler violates the following Content Security Policy directive 'script-src 'nonce-WfG

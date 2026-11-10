@@ -1,0 +1,39 @@
+PART 1 - JavaScript injection (XSS) against xss-vulnerable.js
+  Reflected: script tag returned unencoded?    YES - script runs in the browser
+  Stored: onerror tag shown to every visitor?  YES - runs for each visitor
+  Session cookie readable by script?           YES - no HttpOnly flag
+  DOM-based: page writes URL into innerHTML?   YES - /welcome#<img src=x onerror=...>
+  Content-Security-Policy header               NONE
+
+PART 2 - Dynamic evaluation (eval) against eval-vulnerable.js
+  Normal use: 6*7                              Result: 42
+  eval(): run an OS command (whoami)           Result: root  <- command ran on the server
+  eval(): read a server secret                 Result: S3cr3t-demo-password  <- secret leaked
+  Blocklist: same payload                      Blocked
+  Blocklist: payload without blocked words     Result: root  <- blocklist bypassed
+  new Function(): settings with code inside    {"saved":{"theme":"dark","leaked":"S3cr3t-demo-password"}}  <- secret leaked
+
+PART 3 - The same attacks against secure-app.js
+  Reflected payload                            HTTP 400 <h1>Invalid search term</h1>
+  Normal search                                HTTP 200 Results for: blue shoes No products matched.
+  Stored payload is shown as                   &lt;img src=x onerror=alert(document.cookie)&gt;
+  Raw onerror tag present in page?             no - encoded as text
+  Session cookie flags                         HttpOnly; SameSite=Strict
+  DOM-based fix uses                           textContent (no HTML parsing)
+  Content-Security-Policy header:
+      default-src 'self'
+      script-src 'nonce-VcheHMIfrKmIQZA2Su3uRQ=='
+      object-src 'none'
+      base-uri 'none'
+      frame-ancestors 'none'
+      form-action 'self'
+  Safe parser: (2+3)*4-10/5                    Result: 18
+  eval payload: OS command                     HTTP 400 Bad expression
+  eval payload: secret                         HTTP 400 Bad expression
+  eval payload: blocklist bypass               HTTP 400 Bad expression
+  Settings with code inside                    HTTP 400 {"error":"Bad settings"}
+  Valid JSON settings                          HTTP 200 {"saved":{"theme":"dark","fontSize":14}}
+
+DEFENSE IN DEPTH - node --disallow-code-generation-from-strings
+  eval('1+1')                                  EvalError: Code generation from strings disallowed for this context
+  new Function('return 1')                     EvalError: Code generation from strings disallowed for this context
