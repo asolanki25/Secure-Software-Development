@@ -1,0 +1,9 @@
+--- Terminal 1: server (java SecureServer) ---
+Secure server started. Waiting for client connection...
+Client says: Hello, server!
+
+--- Terminal 2: client (java SecureClient) ---
+Server says: Hello, client!
+
+--- Handshake (java -Djavax.net.debug=ssl:handshake) ---
+Negotiated protocol version: TLSv1.3
