@@ -1,0 +1,8 @@
+Primitive before call: 500
+Primitive after call:  500  (unchanged - value was copied)
+
+Object before mutate:  Ananya = 500
+Object after mutate:   Ananya = 400  (changed - same object was shared)
+
+Reference before reassign: Ananya = 400
+Reference after reassign:  Ananya = 400  (unchanged - the reference itself was copied, so Java is pass-by-value)
