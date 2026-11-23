@@ -1,0 +1,15 @@
+--- allowed: read public columns
+              full_name              |  city   
+-------------------------------------+---------
+ Mary O'Brien                        | Hoboken
+ Legacy <img src=x onerror=alert(1)> | Newark
+(2 rows)
+
+--- denied: read email addresses
+psql:tests/db_privilege_test.sql:7: ERROR:  permission denied for table customers
+--- denied: delete rows
+psql:tests/db_privilege_test.sql:9: ERROR:  permission denied for table customers
+--- denied: change rows
+psql:tests/db_privilege_test.sql:11: ERROR:  permission denied for table customers
+--- denied: drop the table
+psql:tests/db_privilege_test.sql:13: ERROR:  must be owner of table customers

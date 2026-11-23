@@ -1,0 +1,9 @@
+body { font-family: system-ui, sans-serif; margin: 2rem; color: #222; }
+main { max-width: 640px; }
+form { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
+label { display: block; margin-top: .6rem; font-weight: 600; }
+input { width: 100%; padding: .4rem; box-sizing: border-box; }
+button { margin-top: .8rem; padding: .4rem 1rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid #ddd; padding: .4rem; text-align: left; }
+.error { color: #a00; }

@@ -1,0 +1,48 @@
+
+=== 1. Get a CSRF token (starts a session) ===
+token length: 64
+
+=== 2. Normal insert (apostrophe in name) ===
+{"message":"Customer added."}  [HTTP 201]
+
+=== 3. Insert without a CSRF token (forged request) ===
+{"message":"The request could not be verified."}  [HTTP 403]
+
+=== 4. SQL injection in the name field ===
+{"message":"Please check the form and try again."}  [HTTP 422]
+
+=== 5. Stored XSS attempt in the city field ===
+{"message":"Please check the form and try again."}  [HTTP 422]
+
+=== 6. Oversized input (5,000 characters) ===
+{"message":"Please check the form and try again."}  [HTTP 422]
+
+=== 7. Duplicate email ===
+{"message":"That email address is already registered."}  [HTTP 409]
+
+=== 8. Normal search for O'Brien ===
+{"results":[{"full_name":"Mary O\u0027Brien","city":"Hoboken","created_at":"2026-11-23"}]}  [HTTP 200]
+
+=== 9. SQL injection in search: ' OR '1'='1 ===
+{"results":[]}  [HTTP 200]
+
+=== 10. UNION injection in search ===
+{"results":[]}  [HTTP 200]
+
+=== 11. Wildcard-only search: % ===
+{"results":[]}  [HTTP 200]
+
+=== 12. Reflected XSS in search text ===
+{"results":[]}  [HTTP 200]
+
+=== 13. Stored hostile name comes back escaped inside JSON ===
+{"results":[{"full_name":"Legacy \u003Cimg src=x onerror=alert(1)\u003E","city":"Newark","created_at":"2026-11-23"}]}  [HTTP 200]
+
+=== 14. Security headers on the page ===
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: no-referrer
+
+=== 15. Files outside the allow-list ===
+/../src/db.php -> HTTP 404
+/router.php -> HTTP 404

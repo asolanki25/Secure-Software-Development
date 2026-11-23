@@ -1,0 +1,7 @@
+Add customer message: Customer added.
+Stored name shown as text: Legacy <img src=x onerror=alert(1)>
+img elements inside results: 0
+Reflected message: No customers match: <img src=x onerror=alert(2)>
+CSP violations reported by Chrome: 1
+   Executing inline script violates the following Content Security Policy directive 'script-src 'self''. Either the 'unsafe-inline' keyword, a hash ('sha
+Alert dialogs fired: 0 []
