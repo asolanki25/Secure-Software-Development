@@ -1,0 +1,56 @@
+CONSTANT MAX_LENGTH <- {billingName: 60, paymentToken: 28, currency: 3,
+                        idempotencyKey: 36, giftNote: 200}
+CONSTANT ALLOWED_CURRENCIES <- {"USD", "EUR", "GBP"}
+CONSTANT NAME_PATTERN  <- "^[A-Za-z .'-]{1,60}$"   // letters, space, . ' -
+CONSTANT TOKEN_PATTERN <- "^tok_[A-Za-z0-9]{24}$"  // format the gateway issues
+CONSTANT UUID_PATTERN  <- "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-" +
+                          "[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+
+FUNCTION ValidateCheckoutInput(dirty)
+    errors <- empty list
+    work   <- empty record
+    clean  <- empty record
+
+    // Step 1: check length first, before any other processing
+    FOR EACH field IN KEYS(MAX_LENGTH)
+        value <- dirty[field] OR ""
+        IF Length(value) > MAX_LENGTH[field] THEN
+            errors.Add(field + " is too long.")
+        ELSE
+            work[field] <- NormalizeUnicodeNFC(Trim(value))
+        END IF
+    END FOR
+    IF errors IS NOT EMPTY THEN RETURN Failure(errors) END IF
+
+    // Step 2: allow-list each field against its expected format
+    IF Matches(work.billingName, NAME_PATTERN) THEN
+        clean.billingName <- work.billingName
+    ELSE
+        errors.Add("Name may use letters, spaces, and . ' - only.")
+    END IF
+    IF Matches(work.paymentToken, TOKEN_PATTERN) THEN
+        clean.paymentToken <- work.paymentToken
+    ELSE
+        errors.Add("Payment details could not be read. Please re-enter them.")
+    END IF
+    IF work.currency IN ALLOWED_CURRENCIES THEN
+        clean.currency <- work.currency
+    ELSE
+        errors.Add("That currency is not supported.")
+    END IF
+    IF Matches(work.idempotencyKey, UUID_PATTERN) THEN
+        clean.idempotencyKey <- work.idempotencyKey
+    ELSE
+        errors.Add("The request could not be verified.")
+    END IF
+
+    // Free text: allowed as plain text only; it is encoded on output
+    IF ContainsControlCharacters(work.giftNote) THEN
+        errors.Add("The gift note contains characters that are not allowed.")
+    ELSE
+        clean.giftNote <- work.giftNote
+    END IF
+
+    IF errors IS NOT EMPTY THEN RETURN Failure(errors) END IF
+    RETURN Success(clean)          // only clean values leave this function
+END FUNCTION

@@ -1,0 +1,19 @@
+// VULNERABLE: the user's input becomes part of the SQL command
+sql <- "SELECT * FROM orders WHERE user_id = '" + session.userId +
+       "' AND order_id = '" + request.query["id"] + "'"
+rows <- db.Execute(sql)
+//  id = x' OR '1'='1
+//    WHERE user_id = 'u1' AND order_id = 'x' OR '1'='1'
+//    AND is evaluated before OR, so '1'='1' makes every row match
+//    and every customer's orders are returned.
+//  id = x'; UPDATE orders SET amount_cents = 1 WHERE '1'='1
+//    a second command runs if the driver allows stacked statements.
+
+// SECURE: the command is fixed; the input can only ever be a value
+stmt <- db.Prepare("SELECT order_id, amount_cents, status FROM orders " +
+                   "WHERE user_id = ? AND order_id = ?")
+stmt.BindUUID(1, session.userId)
+stmt.BindUUID(2, request.query["id"])   // not a UUID -> rejected here
+rows <- stmt.ExecuteQuery()
+//  Even if passed as a string, x' OR '1'='1 is compared as one literal
+//  value, so no row matches and nothing else runs.

@@ -1,0 +1,44 @@
+PROCEDURE ApplySecurityHeaders(response, nonce)
+    response.SetHeader("Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'nonce-" + nonce + "' 'strict-dynamic'; " +
+        "object-src 'none'; base-uri 'none'; " +
+        "frame-src https://fields.gateway.example; " +  // hosted card fields
+        "frame-ancestors 'none'; form-action 'self'; " +
+        "require-trusted-types-for 'script'; report-to csp")
+    response.SetHeader("Reporting-Endpoints", "csp=\"/csp-reports\"")
+    response.SetHeader("Strict-Transport-Security",
+                       "max-age=31536000; includeSubDomains")
+    response.SetHeader("X-Content-Type-Options", "nosniff")
+    response.SetHeader("Referrer-Policy", "no-referrer")
+    // The session cookie "sid" is issued at sign-in with the flags
+    // HttpOnly = TRUE, Secure = TRUE, SameSite = "Lax"
+END PROCEDURE
+
+// Payment page markup: each script is on the approved list and pinned
+<script nonce="{cspNonce}" src="/js/checkout.js"
+        integrity="sha384-{hash of the approved file}"></script>
+<iframe src="https://fields.gateway.example/card-form"></iframe>
+
+// checkout.js (runs in the customer's browser)
+PROCEDURE ShowOrderSummary(order)
+    GetElement("billing-name").textContent <- order.billingName  // text only
+    GetElement("gift-note").textContent    <- order.giftNote
+    // never: GetElement("gift-note").innerHTML <- order.giftNote
+END PROCEDURE
+
+// Server job, run on a schedule and after every deployment
+PROCEDURE CheckPaymentPageIntegrity()
+    page <- FetchAsBrowser("https://shop.example/checkout")
+    FOR EACH script IN page.scripts
+        approved <- ApprovedScripts.Get(script.src)
+        IF approved IS NULL OR SHA384(script.content) != approved.hash THEN
+            Alert(SecurityTeam, "Unapproved script on payment page: " +
+                  script.src)
+        END IF
+    END FOR
+    policy <- RemoveNonce(page.headers["Content-Security-Policy"])
+    IF policy != ExpectedPolicyWithoutNonce THEN
+        Alert(SecurityTeam, "Payment page CSP header changed.")
+    END IF
+END PROCEDURE

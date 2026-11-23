@@ -1,0 +1,57 @@
+// All calls use account "payments_app": SELECT, INSERT, UPDATE on orders and
+// SELECT on cart_items only. No DROP, ALTER, GRANT, or other schemas.
+
+FUNCTION CreateOrder(userId, amountCents, currency, billingName, giftNote,
+                     itemSummary)
+    orderId <- NewUUID()
+    stmt <- db.Prepare(
+        "INSERT INTO orders (order_id, user_id, amount_cents, currency, " +
+        "billing_name, gift_note, item_summary, status, created_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)")
+    stmt.BindUUID(1, orderId)        // SQL text is fixed before any data
+    stmt.BindUUID(2, userId)
+    stmt.BindInteger(3, amountCents) // money as whole cents, not floats
+    stmt.BindString(4, currency)
+    stmt.BindString(5, billingName)  // O'Brien is stored exactly as typed
+    stmt.BindString(6, giftNote)
+    stmt.BindString(7, itemSummary)
+    stmt.Execute()
+    RETURN orderId
+END FUNCTION
+
+FUNCTION MarkPaid(orderId, chargeId, cardLast4)
+    stmt <- db.Prepare(
+        "UPDATE orders SET status = 'PAID', charge_id = ?, card_last4 = ? " +
+        "WHERE order_id = ? AND status = 'PENDING'")
+    stmt.BindString(1, chargeId)
+    stmt.BindString(2, cardLast4)
+    stmt.BindUUID(3, orderId)
+    IF stmt.Execute().rowsAffected != 1 THEN
+        THROW IntegrityError("Order was not in the expected state.")
+    END IF
+END FUNCTION
+
+CONSTANT SORT_COLUMNS    <- {"date": "created_at", "amount": "amount_cents",
+                             "status": "status"}
+CONSTANT SORT_DIRECTIONS <- {"asc": "ASC", "desc": "DESC"}
+
+FUNCTION SearchOrders(userId, searchText, sortKey, direction)
+    column  <- SORT_COLUMNS.Get(sortKey, DEFAULT "created_at")    // allow-list
+    dir     <- SORT_DIRECTIONS.Get(direction, DEFAULT "DESC")      // allow-list
+    pattern <- "%" + EscapeLikeWildcards(Left(searchText, 40)) + "%"
+    stmt <- db.Prepare(
+        "SELECT order_id, amount_cents, currency, status, item_summary, " +
+        "created_at FROM orders WHERE user_id = ? " +
+        "AND item_summary LIKE ? ESCAPE '!' " +
+        "ORDER BY " + column + " " + dir + " LIMIT 50")
+    stmt.BindUUID(1, userId)         // each user sees only their own orders
+    stmt.BindString(2, pattern)
+    RETURN stmt.ExecuteQuery()
+END FUNCTION
+
+FUNCTION EscapeLikeWildcards(text)   // "!" is the escape character
+    text <- Replace(text, "!", "!!")
+    text <- Replace(text, "%", "!%")
+    text <- Replace(text, "_", "!_")
+    RETURN text
+END FUNCTION

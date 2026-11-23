@@ -1,0 +1,52 @@
+FUNCTION EncodeForHTML(text)          // HTML body context
+    text <- Replace(text, "&", "&amp;")   // must be replaced first
+    text <- Replace(text, "<", "&lt;")
+    text <- Replace(text, ">", "&gt;")
+    text <- Replace(text, "\"", "&quot;")
+    text <- Replace(text, "'", "&#x27;")
+    RETURN text
+END FUNCTION
+
+FUNCTION EncodeForHTMLAttribute(text) // value is always inside quotes
+    FOR EACH character c IN text
+        IF c IS NOT a letter or digit THEN replace c with "&#x" + Hex(c) + ";"
+    END FOR
+    RETURN text
+END FUNCTION
+
+FUNCTION EncodeForURLParameter(text)  // one query value, never a whole URL
+    RETURN PercentEncodeUTF8(text)
+END FUNCTION
+
+// Template rules for every page: SetText() always calls EncodeForHTML,
+// SetAttr() always calls EncodeForHTMLAttribute, and no function exists
+// that inserts raw HTML.
+FUNCTION RenderReceipt(orderId, session)
+    order <- OrderRepository.GetOrderForUser(orderId, session.userId)
+    IF order IS NULL THEN
+        RETURN Error(404, "Order not found.")
+    END IF
+    nonce <- Base64(SecureRandomBytes(16))      // new for every response
+    page  <- Template("receipt.html")
+    page.SetText("billingName", order.billingName)      // stored input
+    page.SetText("giftNote",    order.giftNote)         // stored input
+    page.SetText("amount",      FormatMoney(order.amountCents, order.currency))
+    page.SetText("cardLast4",   order.cardLast4)
+    page.SetAttr("orderIdAttr", order.orderId)          // data-order-id="..."
+    page.SetAttr("orderLink",
+                 "/orders?id=" + EncodeForURLParameter(order.orderId))
+    page.SetAttr("cspNonce",    nonce)
+    ApplySecurityHeaders(page.response, nonce)          // Figure 6
+    RETURN page.Render()
+END FUNCTION
+
+FUNCTION RenderSearchResults(userId, query)
+    rows <- OrderRepository.SearchOrders(userId, query.text,
+                                         query.sort, query.dir)
+    page <- Template("orders.html")
+    IF rows IS EMPTY THEN
+        page.SetText("message", "No orders match: " + query.text)  // reflected
+    END IF
+    page.SetRows("orders", rows)       // every cell is written with SetText
+    RETURN page.Render()
+END FUNCTION

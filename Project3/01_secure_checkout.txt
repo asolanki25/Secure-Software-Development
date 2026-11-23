@@ -1,0 +1,57 @@
+PROCEDURE HandleCheckout(request)
+    // Layer 0: transport, session, and request checks
+    IF request.scheme != "https" THEN
+        RETURN Redirect(ToHttpsUrl(request))   // payment data never over HTTP
+    END IF
+    session <- SessionStore.Get(request.cookie["sid"])
+    IF session IS NULL OR session.IsExpired() THEN
+        RETURN Error(401, "Please sign in again.")
+    END IF
+    IF NOT ConstantTimeEquals(request.form["csrf"], session.csrfToken) THEN
+        AuditLog.Write("CSRF_FAIL", session.userId)
+        RETURN Error(403, "The request could not be verified.")
+    END IF
+    IF RateLimiter.TooMany(session.userId, "checkout", 5, PER_MINUTE) THEN
+        RETURN Error(429, "Too many attempts. Please try again later.")
+    END IF
+
+    // Layer 1: dirty input becomes clean input (Figure 3)
+    dirty  <- request.form                  // untrusted; never used directly
+    result <- ValidateCheckoutInput(dirty)
+    IF result.HasErrors() THEN
+        RETURN RenderCheckoutForm(result.messages)   // encoded (Figure 5)
+    END IF
+    clean <- result.cleanInput
+
+    // Layer 2: server sets the amount; card number never reaches this server
+    cart   <- OrderRepository.GetCart(session.userId)  // parameterized
+    amount <- PriceService.TotalInCents(cart)   // ignore any browser price
+    IF amount <= 0 THEN
+        RETURN Error(400, "Your cart is empty.")
+    END IF
+
+    // Layer 3: one transaction on a least-privilege database account
+    BEGIN TRANSACTION USING DB_ACCOUNT "payments_app"
+        orderId <- OrderRepository.CreateOrder(session.userId, amount,
+                       clean.currency, clean.billingName, clean.giftNote,
+                       cart.summary)
+        charge <- PaymentGateway.Charge(token = clean.paymentToken,
+                       amountCents = amount, currency = clean.currency,
+                       idempotencyKey = clean.idempotencyKey)  // over TLS
+        IF NOT charge.SignatureIsValid() OR charge.status != "APPROVED" THEN
+            ROLLBACK
+            AuditLog.Write("CHARGE_DECLINED", session.userId)
+            RETURN RenderCheckoutForm(["Payment was not approved."])
+        END IF
+        OrderRepository.MarkPaid(orderId, charge.id, charge.cardLast4)
+    COMMIT
+
+    AuditLog.Write("ORDER_PAID", session.userId, orderId)  // no card data
+    RETURN RenderReceipt(orderId, session)                  // Figure 5
+
+ON ERROR e
+    ROLLBACK IF TRANSACTION IS ACTIVE
+    errorId <- NewRandomId()
+    ErrorLog.Write(errorId, e.type, e.stackTrace)   // details stay on server
+    RETURN Error(500, "Something went wrong. Reference: " + errorId)
+END PROCEDURE
