@@ -1,0 +1,36 @@
+// Secure messaging system: a client app sends messages to a server over TLS.
+PROCEDURE ClientSendMessage(recipient, text)
+    conn <- OpenSecureConnection("msg.example.com", 443)       // Figure 4
+    IF conn IS NULL THEN
+        ShowUser("Secure connection failed. Message was not sent.")
+        RETURN                                   // fail closed: never retry
+    END IF                                       // over plain HTTP
+    token <- SecureStore.Get("session_token")    // issued at login over TLS
+    body  <- JSON{ to: recipient, text: text,
+                   msgId: NewUUID(),             // unique per message
+                   sentAt: UtcNow() }
+    conn.Send("POST /messages",
+              headers = { "Authorization": "Bearer " + token }, body)
+    reply <- conn.Receive(timeout = 10 seconds)
+    ShowUser(reply.status = 201 ? "Delivered." : "Message was not sent.")
+    conn.Close()
+END PROCEDURE
+
+PROCEDURE ServerHandleMessage(conn, request)     // called by Figure 2
+    IF NOT conn.isTls OR conn.tlsVersion < TLS_1_2 THEN
+        RETURN Reject(conn, 426)                 // upgrade required
+    END IF
+    VerifyClientCertificate(conn)                // mutual TLS, Figure 5
+    user <- Sessions.Verify(request.headers["Authorization"])
+    IF user IS NULL THEN RETURN Reject(conn, 401) END IF
+    msg <- ValidateMessage(request.body)         // types, lengths, recipient
+    IF msg IS NULL THEN RETURN Reject(conn, 400) END IF
+    IF ReplayCache.Contains(msg.msgId)
+       OR Abs(UtcNow() - msg.sentAt) > 5 minutes THEN
+        RETURN Reject(conn, 409)                 // replayed or stale message
+    END IF
+    ReplayCache.Add(msg.msgId, expiresIn = 10 minutes)
+    MessageStore.Save(sender = user.id, msg)     // parameterized; encrypted
+    AuditLog.Write("MSG_SENT", user.id, msg.msgId)   // no message text logged
+    RETURN Respond(conn, 201)
+END PROCEDURE

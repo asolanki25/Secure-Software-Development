@@ -1,0 +1,22 @@
+// What the TLS 1.3 library does inside DoHandshake() (simplified)
+CLIENT: (cPriv, cPub) <- GenerateEphemeralKeyPair(X25519)
+CLIENT -> SERVER: ClientHello{ versions: [TLS 1.3, TLS 1.2],
+                               suites, keyShare: cPub, random: 32 bytes,
+                               serverName: "msg.example.com" }
+SERVER: (sPriv, sPub) <- GenerateEphemeralKeyPair(X25519)
+SERVER -> CLIENT: ServerHello{ version: TLS 1.3, suite, keyShare: sPub }
+BOTH:   shared <- ECDH(myPriv, peerPub)          // never sent on the wire
+BOTH:   handshakeKeys <- HKDF(shared, transcriptHash)
+        // ---- everything below is encrypted with handshakeKeys ----
+SERVER -> CLIENT: Certificate{ chain: [leaf, intermediate] }
+SERVER -> CLIENT: CertificateVerify{ Sign(serverKey, transcriptHash) }
+SERVER -> CLIENT: Finished{ HMAC(handshakeKeys, transcriptHash) }
+CLIENT: VerifyChain(chain, trustStore)           // CA signatures, dates
+CLIENT: VerifyHostname(leaf, "msg.example.com")  // name must match
+CLIENT: VerifySignature(leaf.publicKey, CertificateVerify)  // owns the key
+CLIENT: VerifyFinished()                         // transcript not altered
+CLIENT -> SERVER: Certificate + CertificateVerify  // only for mutual TLS
+CLIENT -> SERVER: Finished{ HMAC(handshakeKeys, transcriptHash) }
+BOTH:   trafficKeys <- HKDF(shared, fullTranscriptHash)
+BOTH:   DeleteEphemeralKeys(myPriv)              // forward secrecy
+        // application data: AEAD_Encrypt(trafficKeys, seqNo, record)

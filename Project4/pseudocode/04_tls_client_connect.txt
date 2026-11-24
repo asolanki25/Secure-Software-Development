@@ -1,0 +1,25 @@
+FUNCTION OpenSecureConnection(host, port)
+    ctx <- NewTlsClientContext()
+    ctx.minimumVersion <- TLS_1_2                // refuse SSL 3.0, TLS 1.0/1.1
+    ctx.trustStore <- LoadTrustedRoots("org-root-ca.pem")   // or OS store
+    ctx.verifyMode <- CERT_REQUIRED              // never CERT_NONE
+    ctx.checkHostname <- TRUE                    // certificate must name host
+    ctx.checkRevocation <- TRUE                  // OCSP staple or CRL
+    ctx.LoadClientCertificate("device-cert.pem",
+                              SecureStore.Get("device-key"))   // mutual TLS
+    TRY
+        sock <- TcpConnect(host, port, timeout = 5 seconds)
+        tls  <- ctx.WrapSocket(sock, serverName = host)   // SNI + name check
+        tls.DoHandshake()                        // Figure 3
+    CATCH TlsError e
+        SecurityLog.Write("TLS_FAIL", host, e.reason)
+        RETURN NULL                              // no "continue anyway" button
+    END TRY
+    IF NOT PinMatches(tls.PeerCertificate(), host) THEN      // Figure 5
+        SecurityLog.Write("PIN_MISMATCH", host,
+                          SpkiHash(tls.PeerCertificate()))
+        tls.Close()
+        RETURN NULL
+    END IF
+    RETURN tls
+END FUNCTION

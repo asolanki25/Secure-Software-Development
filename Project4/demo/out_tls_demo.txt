@@ -1,0 +1,23 @@
+Pinned server key (SPKI SHA-256): I35NstvqY+FfZcBlURS0FAK7ix01eNcrmH9iIUmF7hg=
+
+1. Secure client -> real server
+   result:   OK TLSv1.3 TLS_AES_256_GCM_SHA384 | 201 Delivered (from device-001): Meet at 3 pm. Door code 4471.
+   attacker read: nothing
+2. INSECURE client -> MITM (rogue CA)
+   result:   OK (client thinks) | 201 Delivered
+   attacker read: Meet at 3 pm. Door code 4471.
+3. Secure client -> MITM (rogue CA)
+   result:   REFUSED by client: unable to get local issuer certificate
+   attacker read: nothing
+4. Secure client -> wrong host name
+   result:   REFUSED by client: Hostname mismatch, certificate is not valid for 'localhost'.
+   attacker read: nothing
+5. Secure client -> mis-issued cert
+   result:   REFUSED by client: server key does not match the pin
+   attacker read: nothing
+6. Secure client -> TLS 1.1 downgrade
+   result:   REFUSED: TLSV1_ALERT_PROTOCOL_VERSION
+   attacker read: nothing
+7. No client cert -> real server
+   result:   REFUSED: TLSV13_ALERT_CERTIFICATE_REQUIRED
+   attacker read: nothing

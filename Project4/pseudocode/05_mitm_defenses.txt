@@ -1,0 +1,30 @@
+// Pins: SHA-256 hashes of the server public keys this app will accept.
+// A backup pin lets the server change keys without locking clients out.
+CONSTANT PINS <- { "msg.example.com": [ "current-key-spki-sha256",
+                                        "backup-key-spki-sha256" ] }
+
+FUNCTION SpkiHash(cert)
+    RETURN Base64(SHA256(cert.SubjectPublicKeyInfo))
+END FUNCTION
+
+FUNCTION PinMatches(cert, host)                  // used by Figure 4
+    RETURN SpkiHash(cert) IN PINS[host]
+END FUNCTION
+
+PROCEDURE VerifyClientCertificate(conn)          // used by Figure 1
+    cert <- conn.PeerCertificate()               // chain already verified
+    IF cert IS NULL THEN Reject(conn, "client certificate required") END IF
+    device <- Devices.FindBySerial(cert.serialNumber)
+    IF device IS NULL OR device.revoked THEN
+        Reject(conn, "unknown or revoked device")
+    END IF
+END PROCEDURE
+
+PROCEDURE MonitorCertificates()                  // scheduled job
+    FOR EACH entry IN CertificateTransparencyLog.Search("msg.example.com")
+        IF entry.issuer NOT IN ApprovedIssuers
+           OR SpkiHash(entry.cert) NOT IN PINS["msg.example.com"] THEN
+            Alert(SecurityTeam, "Unexpected certificate issued for our domain")
+        END IF
+    END FOR
+END PROCEDURE

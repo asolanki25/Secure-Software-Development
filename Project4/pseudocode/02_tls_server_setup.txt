@@ -1,0 +1,23 @@
+PROCEDURE StartMessageServer()
+    ctx <- NewTlsServerContext()
+    ctx.minimumVersion <- TLS_1_2                 // SSL 3.0, TLS 1.0/1.1 refused
+    ctx.tls13Suites <- [TLS_AES_256_GCM_SHA384,
+                        TLS_CHACHA20_POLY1305_SHA256, TLS_AES_128_GCM_SHA256]
+    ctx.tls12Suites <- [ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+                        ECDHE_RSA_WITH_AES_256_GCM_SHA384]  // ECDHE + AEAD only
+    ctx.Disable(COMPRESSION, CLIENT_RENEGOTIATION)
+    ctx.LoadCertificateChain("server-fullchain.pem")   // leaf + intermediate
+    ctx.LoadPrivateKey(KeyVault.Get("msg-server-key")) // never in source code
+    ctx.EnableOcspStapling()                     // proves cert is not revoked
+    ctx.sessionTicketKeys <- RotateEvery(24 hours)
+    ctx.verifyMode <- CERT_REQUIRED              // mutual TLS for devices
+    ctx.LoadTrustedClientCa("device-ca.pem")
+
+    StartPlainListener(port = 80, action = RedirectTo("https://"))  // no data
+    listener <- ctx.Listen(port = 443)
+    FOR EACH conn IN listener.Accept()
+        conn.SetHeader("Strict-Transport-Security",
+                       "max-age=63072000; includeSubDomains; preload")
+        Spawn(ServerHandleMessage, conn, conn.ReadRequest())   // Figure 1
+    END FOR
+END PROCEDURE
