@@ -1,0 +1,27 @@
+== rgarcia (record_entry)
+  insert a watch order:
+    1|rgarcia
+    INSERT 0 1
+  update the order:
+    UPDATE 1
+  delete the order:
+    ERROR:  permission denied for table watch_orders
+  drop a table:
+    ERROR:  must be owner of table residents
+  create a user:
+    ERROR:  permission denied to create role
+    DETAIL:  Only roles with the CREATEROLE attribute may create roles.
+== jlee (records_viewer)
+  read the directory view:
+    1|Ana Ortiz|12 Elm St
+  read the base table (phone, birth date):
+    ERROR:  permission denied for table residents
+  insert a watch order:
+    ERROR:  permission denied for table watch_orders
+== mkhan (records_supervisor, inherits record_entry)
+  read watch orders:
+    1|Away; neighbor has key|rgarcia
+  delete a watch order:
+    DELETE 1
+  delete a resident:
+    ERROR:  permission denied for table residents

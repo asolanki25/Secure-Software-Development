@@ -1,0 +1,15 @@
+# Step 2: ways to connect to the smithtown_pd database (Linux shell)
+
+# As the database administrator, through the local Unix socket
+sudo -u postgres psql -d smithtown_pd
+
+# Inside an open psql session: switch databases, then confirm the connection
+\connect smithtown_pd
+\conninfo
+
+# As an individual user over TCP (password is prompted, never typed inline)
+psql -h 127.0.0.1 -p 5432 -U rgarcia -d smithtown_pd
+
+# In production, require an encrypted connection that verifies the server
+psql "host=db.smithtown.example dbname=smithtown_pd user=rgarcia
+      sslmode=verify-full sslrootcert=/etc/ssl/certs/smithtown-ca.pem"

@@ -1,0 +1,10 @@
+== rgarcia after REVOKE record_entry
+  insert a watch order:
+    psql: error: connection to server at "127.0.0.1", port 5432 failed: FATAL:  permission denied for database "smithtown_pd"
+    DETAIL:  User does not have CONNECT privilege.
+== jlee after ALTER ROLE ... NOLOGIN
+  log in:
+    psql: error: connection to server at "127.0.0.1", port 5432 failed: FATAL:  role "jlee" is not permitted to log in
+== mkhan (unchanged)
+  insert a watch order:
+    INSERT 0 1

@@ -1,0 +1,11 @@
+DROP DATABASE IF EXISTS smithtown_pd;
+DROP DATABASE
+DROP ROLE IF EXISTS rgarcia, jlee, mkhan,
+    record_entry, records_viewer, records_supervisor;
+DROP ROLE
+CREATE DATABASE smithtown_pd
+    OWNER    postgres
+    ENCODING 'UTF8';
+CREATE DATABASE
+REVOKE CONNECT, TEMPORARY ON DATABASE smithtown_pd FROM PUBLIC;
+REVOKE

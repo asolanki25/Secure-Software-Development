@@ -1,0 +1,16 @@
+You are now connected to database "smithtown_pd" as user "postgres".
+     role_name      |       object       |       privileges       
+--------------------+--------------------+------------------------
+ record_entry       | residents          | INSERT, SELECT, UPDATE
+ record_entry       | watch_orders       | INSERT, SELECT, UPDATE
+ records_supervisor | watch_orders       | DELETE
+ records_viewer     | resident_directory | SELECT
+(4 rows)
+
+     role_name      |     member_of      
+--------------------+--------------------
+ records_supervisor | record_entry
+ mkhan              | records_supervisor
+ jlee               | records_viewer
+(3 rows)
+

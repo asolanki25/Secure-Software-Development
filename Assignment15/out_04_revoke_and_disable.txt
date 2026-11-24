@@ -1,0 +1,10 @@
+You are now connected to database "smithtown_pd" as user "postgres".
+REVOKE ROLE
+ALTER ROLE
+ user_name | can_login |     member_of      
+-----------+-----------+--------------------
+ jlee      | f         | records_viewer
+ mkhan     | t         | records_supervisor
+ rgarcia   | t         | (none)
+(3 rows)
+

@@ -1,0 +1,23 @@
+You are now connected to database "smithtown_pd" as user "postgres".
+You are connected to database "smithtown_pd" as user "postgres" via socket in "/var/run/postgresql" at port "5432".
+CREATE SCHEMA
+REVOKE
+CREATE TABLE
+CREATE TABLE
+CREATE VIEW
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT ROLE
+GRANT
+GRANT ROLE
+GRANT ROLE
+GRANT ROLE
+INSERT 0 1
