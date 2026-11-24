@@ -1,0 +1,28 @@
+rules:
+  - id: php-sql-string-concatenation
+    languages: [php]
+    severity: ERROR
+    message: SQL built by joining strings with user data; use a prepared statement.
+    patterns:
+      - pattern-either:
+          - pattern: $DB->query("..." . $X . "...")
+          - pattern: $DB->query("..." . $X)
+          - pattern: $DB->exec("..." . $X . "...")
+          - pattern: pg_query($C, "..." . $X . "...")
+  - id: js-innerhtml-assignment
+    languages: [javascript]
+    severity: WARNING
+    message: Writing to innerHTML parses markup; use textContent for untrusted data.
+    pattern: $EL.innerHTML = $VAL
+  - id: js-eval-call
+    languages: [javascript]
+    severity: ERROR
+    message: eval() runs a string as code; never pass it user input.
+    pattern: eval(...)
+  - id: php-echo-unescaped-request
+    languages: [php]
+    severity: ERROR
+    message: Request data echoed without htmlspecialchars(); reflected XSS.
+    pattern-either:
+      - pattern: echo $_GET[...];
+      - pattern: echo "..." . $_GET[...] . "...";

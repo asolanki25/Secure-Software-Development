@@ -1,0 +1,34 @@
+$ semgrep scan --metrics=off --config rules/course-rules.yml ../Assignment14 samples
+
+ 4 Code Findings
+
+    samples/vulnerable_search.php
+   >> rules.php-sql-string-concatenation
+          [blocking]
+          SQL built by joining strings with user data; use a prepared statement.
+
+            5 | $rows = $pdo->query("SELECT * FROM customers WHERE full_name = '" .
+                $name . "'");
+
+   >> rules.php-echo-unescaped-request
+          [blocking]
+          Request data echoed without htmlspecialchars(); reflected XSS.
+
+            6 | echo "<p>Results for " . $_GET['name'] . "</p>";
+
+    samples/vulnerable_ui.js
+    > rules.js-innerhtml-assignment
+          [blocking]
+          Writing to innerHTML parses markup; use textContent for untrusted data.
+
+            3 | document.getElementById('out').innerHTML = result.name;
+
+   >> rules.js-eval-call
+          [blocking]
+          eval() runs a string as code; never pass it user input.
+
+            4 | return eval('(' + result.json + ')');
+
+
+$ semgrep scan --metrics=off --config rules/course-rules.yml ../Assignment14 --json
+Assignment14 findings: 0 | files scanned: 4
